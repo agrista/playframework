@@ -293,7 +293,7 @@ class MessagesPlugin(app: Application) extends Plugin {
     MessagesApi {
       Lang.availables(app).map(_.code).map { lang =>
         (lang, loadMessages("messages." + lang))
-      }.toMap + ("default" -> loadMessages("messages"))
+      }.toMap + ("default" -> loadMessages("messages.default"))
     }
   }
 
@@ -306,6 +306,7 @@ class MessagesPlugin(app: Application) extends Plugin {
    * Loads all configuration and message files defined in the classpath.
    */
   override def onStart() {
+  	    println(s"[Override] MessagesPlugin:onStart:")
     messages
   }
 
