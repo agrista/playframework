@@ -83,7 +83,6 @@ public class JPA {
         if (play.Play.application().configuration().getString("jpadefault.name") != null) {
             defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
         }
-        System.out.println("1>>>>>>> =="+ defaultPersistenceUnit);
         return withTransaction(defaultPersistenceUnit, false, block);
     }
 
@@ -97,7 +96,6 @@ public class JPA {
         if (play.Play.application().configuration().getString("jpadefault.name") != null) {
             defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
         }
-        System.out.println("2>>>>>>> =="+ defaultPersistenceUnit);
         return withTransactionAsync(defaultPersistenceUnit, false, block);
     }
 
@@ -112,7 +110,6 @@ public class JPA {
             if (play.Play.application().configuration().getString("jpadefault.name") != null) {
                 defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
             }
-            System.out.println("3>>>>>>> =="+ defaultPersistenceUnit);
             withTransaction(defaultPersistenceUnit, false, new play.libs.F.Function0<Void>() {
                 public Void apply() throws Throwable {
                     block.invoke();
