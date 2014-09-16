@@ -2,6 +2,7 @@ package play.db.jpa;
 
 import play.*;
 import play.libs.F;
+import play.api.Play;
 import play.mvc.Http;
 import scala.concurrent.ExecutionContext;
 
@@ -19,7 +20,7 @@ public class JPA {
      * Get the EntityManager for specified persistence unit for this thread.
      */
     public static EntityManager em(String key) {
-        Application app = Play.application();
+        Application app = play.Play.application();
         if(app == null) {
             throw new RuntimeException("No application running");
         }
@@ -28,7 +29,6 @@ public class JPA {
         if(jpaPlugin == null) {
             throw new RuntimeException("No JPA EntityManagerFactory configured for name [" + key + "]");
         }
-
         EntityManager em = jpaPlugin.em(key);
         if(em == null) {
             throw new RuntimeException("No JPA EntityManagerFactory configured for name [" + key + "]");
@@ -79,7 +79,12 @@ public class JPA {
      * @param block Block of code to execute.
      */
     public static <T> T withTransaction(play.libs.F.Function0<T> block) throws Throwable {
-        return withTransaction("default", false, block);
+        String defaultPersistenceUnit = "default";
+        if (play.Play.application().configuration().getString("jpadefault.name") != null) {
+            defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
+        }
+        System.out.println("1>>>>>>> =="+ defaultPersistenceUnit);
+        return withTransaction(defaultPersistenceUnit, false, block);
     }
 
     /**
@@ -88,7 +93,12 @@ public class JPA {
      * @param block Block of code to execute.
      */
     public static <T> F.Promise<T> withTransactionAsync(play.libs.F.Function0<F.Promise<T>> block) throws Throwable {
-        return withTransactionAsync("default", false, block);
+        String defaultPersistenceUnit = "default";
+        if (play.Play.application().configuration().getString("jpadefault.name") != null) {
+            defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
+        }
+        System.out.println("2>>>>>>> =="+ defaultPersistenceUnit);
+        return withTransactionAsync(defaultPersistenceUnit, false, block);
     }
 
     /**
@@ -98,7 +108,12 @@ public class JPA {
      */
     public static void withTransaction(final play.libs.F.Callback0 block) {
         try {
-            withTransaction("default", false, new play.libs.F.Function0<Void>() {
+            String defaultPersistenceUnit = "default";
+            if (play.Play.application().configuration().getString("jpadefault.name") != null) {
+                defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
+            }
+            System.out.println("3>>>>>>> =="+ defaultPersistenceUnit);
+            withTransaction(defaultPersistenceUnit, false, new play.libs.F.Function0<Void>() {
                 public Void apply() throws Throwable {
                     block.invoke();
                     return null;
@@ -165,7 +180,13 @@ public class JPA {
         EntityManager em = null;
         EntityTransaction tx = null;
         try {
-
+            if (name.equals("default")) {
+                String defaultPersistenceUnit = "default";
+                if (play.Play.application().configuration().getString("jpadefault.name") != null) {
+                    defaultPersistenceUnit = play.Play.application().configuration().getString("jpadefault.name");
+                }
+                name = defaultPersistenceUnit;
+            }
             em = JPA.em(name);
             JPA.bindForCurrentThread(em);
 

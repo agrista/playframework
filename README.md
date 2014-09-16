@@ -2,6 +2,12 @@
 
 The Play Framework combines productivity and performance making it easy to build scalable web applications with Java and Scala.  Play is developer friendly with a "just hit refresh" workflow and built-in testing support.  With Play, applications scale predictably due to a stateless and non-blocking architecture.  By being RESTful by default, including assets compilers, JSON & WebSocket support, Play is a perfect fit for modern web & mobile applications.
 
+### Agrista Changes:
+- cd framework
+- ./build
+- > publish-local
+- copy the pubished repository/local/com.typesafe.play/play-java-jpa_2.10/2.2-SNAPSHOT/jars/play-java-jpa_2.10.jar to the project's lib directory
+
 ### Learn More
 - [www.playframework.com](http://www.playframework.com)
 - [Download](http://www.playframework.com/download)
