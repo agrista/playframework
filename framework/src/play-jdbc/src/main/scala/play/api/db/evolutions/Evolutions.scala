@@ -155,19 +155,39 @@ object Evolutions {
   def checkEvolutionsState(api: DBApi, db: String) {
     def createPlayEvolutionsTable()(implicit conn: Connection): Unit = {
       try {
-        execute(
-          """
+        val OracleJdbcUrl = "^jdbc:oracle:.*".r
+
+        val createScript = api.getDataSourceURL(db) match {
+          case OracleJdbcUrl() =>
+            """
               create table play_evolutions (
-                  id int not null primary key, hash varchar(255) not null,
+                  id number(10,0) not null enable,
+                  hash varchar2(255 byte),
+                  applied_at timestamp not null,
+                  apply_script clob,
+                  revert_script clob,
+                  state varchar2(255 char),
+                  last_problem clob,
+                  constraint play_evolutions_pk primary key (id)
+              )
+            """
+          case _ =>
+            """
+              create table play_evolutions (
+                  id int not null primary key,
+                  hash varchar(255) not null,
                   applied_at timestamp not null,
                   apply_script text,
                   revert_script text,
                   state varchar(255),
                   last_problem text
               )
-          """)
+            """
+        }
+
+        execute(createScript)
       } catch {
-        case NonFatal(ex) => Logger.warn("play_evolutions table already existed")
+        case NonFatal(ex) => Logger.warn("play_evolutions table already existed or could not create")
       }
     }
 
@@ -458,7 +478,7 @@ class EvolutionsPlugin(app: Application) extends Plugin with HandleWebCommandSup
   override def onStart() {
     dbApi.datasources.foreach {
       case (ds, db) => {
-        withLock(ds) {
+        withLock(dbApi, db, ds) {
           val script = evolutionScript(dbApi, app.path, app.classloader, db)
           val hasDown = script.exists(_.isInstanceOf[DownScript])
 
@@ -491,12 +511,13 @@ class EvolutionsPlugin(app: Application) extends Plugin with HandleWebCommandSup
     }
   }
 
-  def withLock(ds: DataSource)(block: => Unit) {
+  def withLock(api: DBApi, db: String, ds: DataSource)(block: => Unit) {
     if (app.configuration.getBoolean("evolutions.use.locks").getOrElse(false)) {
+      val url = api.getDataSourceURL(db)
       val c = ds.getConnection
       c.setAutoCommit(false)
       val s = c.createStatement()
-      createLockTableIfNecessary(c, s)
+      createLockTableIfNecessary(url, c, s)
       lock(c, s)
       try {
         block
@@ -508,18 +529,32 @@ class EvolutionsPlugin(app: Application) extends Plugin with HandleWebCommandSup
     }
   }
 
-  def createLockTableIfNecessary(c: Connection, s: Statement) {
+  def createLockTableIfNecessary(url: String, c: Connection, s: Statement) {
     try {
       val r = s.executeQuery("select lock from play_evolutions_lock")
       r.close()
     } catch {
       case e: SQLException =>
         c.rollback()
-        s.execute("""
-        create table play_evolutions_lock (
-          lock int not null primary key
-        )
-        """)
+
+        val OracleJdbcUrl = "^jdbc:oracle:.*".r
+        val createScript = url match {
+          case OracleJdbcUrl() =>
+            """
+              create table play_evolutions_lock (
+                  lock number(10,0) not null enable,
+                  constraint play_evolutions_lock_pk primary key (lock)
+              )
+            """
+          case _ =>
+            """
+              create table play_evolutions_lock (
+                  lock int not null primary key
+              )
+            """
+        }
+
+        s.execute(createScript)
         s.executeUpdate("insert into play_evolutions_lock (lock) values (1)")
     }
   }
