@@ -30,7 +30,7 @@ private[evolutions] case class Evolution(revision: Int, sql_up: String = "", sql
   /**
    * Revision hash, automatically computed from the SQL content.
    */
-  val hash = sha1(sql_down.trim + sql_up.trim)
+  val hash = sha1((if (sql_down == null) "" else sql_down.trim) + (if (sql_up == null) "" else sql_up.trim))
 
 }
 
